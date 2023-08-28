@@ -1,0 +1,94 @@
+version: '3'
+
+services:
+  emqx1:
+    image: emqx/emqx-enterprise:5.1.0
+    container_name: emqx1
+    environment:
+    - "EMQX_NODE__COOKIE=emqx_dist_insecure_cookie"
+    - "EMQX_NODE_NAME=emqx@node1.emqx.io"
+    - "EMQX_CLUSTER__DISCOVERY_STRATEGY=static"
+    - "EMQX_CLUSTER__STATIC__SEEDS=[emqx@node1.emqx.io,emqx@node2.emqx.io,emqx@node3.emqx.io]"
+    - "EMQX_LOG__CONSOLE_HANDLER__LEVEL=info"
+    - "EMQX_API_KEY__BOOTSTRAP_FILE=/opt/emqx/etc/api-keys.txt"
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 5s
+      timeout: 25s
+      retries: 5
+    volumes:
+      - ./api-keys.txt:/opt/emqx/etc/api-keys.txt:ro
+    networks:
+      emqx-bridge:
+        aliases:
+        - node1.emqx.io
+    ports:
+      - "18083:18083"
+
+  emqx2:
+    image: emqx/emqx-enterprise:5.1.0
+    container_name: emqx2
+    environment:
+    - "EMQX_NODE__COOKIE=emqx_dist_insecure_cookie"
+    - "EMQX_NODE_NAME=emqx@node2.emqx.io"
+    - "EMQX_CLUSTER__DISCOVERY_STRATEGY=static"
+    - "EMQX_CLUSTER__STATIC__SEEDS=[emqx@node1.emqx.io,emqx@node2.emqx.io,emqx@node3.emqx.io]"
+    - "EMQX_LOG__CONSOLE_HANDLER__LEVEL=info"
+    - "EMQX_API_KEY__BOOTSTRAP_FILE=/opt/emqx/etc/api-keys.txt"
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 5s
+      timeout: 25s
+      retries: 5
+    volumes:
+      - ./api-keys.txt:/opt/emqx/etc/api-keys.txt:ro
+    networks:
+      emqx-bridge:
+        aliases:
+        - node2.emqx.io
+
+  emqx3:
+    image: emqx/emqx-enterprise:5.1.0
+    container_name: emqx3
+    environment:
+    - "EMQX_NODE__COOKIE=emqx_dist_insecure_cookie"
+    - "EMQX_NODE_NAME=emqx@node3.emqx.io"
+    - "EMQX_CLUSTER__DISCOVERY_STRATEGY=static"
+    - "EMQX_CLUSTER__STATIC__SEEDS=[emqx@node1.emqx.io,emqx@node2.emqx.io,emqx@node3.emqx.io]"
+    - "EMQX_LOG__CONSOLE_HANDLER__LEVEL=info"
+    - "EMQX_API_KEY__BOOTSTRAP_FILE=/opt/emqx/etc/api-keys.txt"
+    healthcheck:
+      test: ["CMD", "/opt/emqx/bin/emqx", "ctl", "status"]
+      interval: 5s
+      timeout: 25s
+      retries: 5
+    volumes:
+      - ./api-keys.txt:/opt/emqx/etc/api-keys.txt:ro
+    networks:
+      emqx-bridge:
+        aliases:
+        - node3.emqx.io
+
+  haproxy:
+    image: haproxy:latest
+    container_name: haproxy
+    depends_on:
+      emqx1:
+        condition: service_healthy
+      emqx2:
+        condition: service_healthy
+      emqx3:
+        condition: service_healthy
+    ports:
+      - "1883:1883"
+      - "8080:8080"
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    networks:
+      emqx-bridge:
+        aliases:
+        - lb.emqx.io
+
+networks:
+  emqx-bridge:
+    driver: bridge
