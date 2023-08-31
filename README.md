@@ -181,7 +181,8 @@ We will start with evacuation. Its main properties are:
 * Evacuation is **persistent**. That means, that the node keeps its state on disk/data volume and preserves its evacuating state even after restart. Evacuation should be disabled explicitly.
 
 The scenario of evacuation is the following:
-When evacuation starts on a node, it starts to report itself as unhealthy to the load balancer.
+
+* When evacuation starts on a node, it starts to report itself as unhealthy to the load balancer.
 * The load balancer marks the node as unhealthy and stops sending new connections to the node.
 * After some time, the node starts to reject new connections itself and also starts to disconnect existing clients.
 * After all the clients are disconnected, the node starts to wait for some time again to let the clients reconnect to other nodes and take over their states.
