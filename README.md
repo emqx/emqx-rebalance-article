@@ -283,7 +283,7 @@ Channel statistics:
   initial_sessions: 30
 ```
 
-In the HAProxy statistics page, we also see that `emqx1` is empty and marked as unhealthy. All 90 clients are distributed among the three nodes.
+In the HAProxy statistics page, we also see that `emqx1` is empty and marked as unhealthy. All 90 clients are distributed among the two other nodes.
 
 ![HAProxy statistics page: Evacuation finished](./images/eviction_over.png)
 
@@ -291,11 +291,11 @@ Note, that the **cooperation of EMQX and the load balancer (HAProxy) is crucial*
 
 * If we use a round-robin strategy, then in the finish the clients may be distributed among the two active nodes a bit more unevenly.
 * If, additionally, we do not set up any health checks, then the clients may experience several unsuccessful connection attempts before they connect to the healthy nodes.
-* Finally, if we set up leastconn strategy, but do not set up health checks, then the clients will get into a dead loop: HAProxy will send them to the unhealthy node (which dropped all the connections), and the node will reject them.
+* Finally, if we set up the `leastconn` strategy, but do not set up health checks, then the clients will get into a dead loop: HAProxy will send them to the unhealthy node (which dropped all the connections), and the node will reject them.
 
 ## Stop Evaluation
 
-Now imagine that we finished our maintenance on `emqx1` and returned it back to the cluster.
+Now imagine that we finished our "maintenance" on `emqx1` and returned it to the cluster.
 
 ```bash
 emqx@7832a3427ebb:/opt/emqx$ ./bin/emqx_ctl rebalance stop
@@ -315,13 +315,13 @@ We need to distribute connections back. We will do it with the rebalance process
 
 ## Rebalance
 
-Rebalance is a more complicated process. Its main properties are:
+Rebalance is a more complicated process than evacuation. Its main properties are:
 * Rebalance is a _process_ involving **many nodes** (usually all nodes).
 * Rebalance is **ephemeral**. That means, that the nodes do not keep any state about rebalancing. If any of the nodes involved in rebalancing crashes, the **whole** rebalancing process is aborted.
 
 The scenario of rebalance is the following:
 * The rebalance process is started on one of the nodes, the **coordinator** node.
-* The coordinator node collects statistics about the number of connections and sessions on all the nodes. It divides the nodes into two groups: **donors** and **recipients**. The donors are the nodes with the most connections and sessions, and the recipients are the nodes with the least connections and sessions.
+* The coordinator node collects statistics about the number of connections and sessions on all the participating nodes. It divides the nodes into two groups: **donors** and **recipients**. The donors are the nodes with the most connections and sessions, and the recipients are the nodes with the least connections and sessions.
 * The coordinator node tells the donor nodes to report themselves as unhealthy to the load balancer.
 * After the configured time, the coordinator node starts to disconnect the clients from the donor nodes with the configured pace.
 * After the population of donor nodes in the cluster is decreased to the configured threshold, the coordinator starts to wait again for the configured time to let the clients reconnect to other nodes and take over their states.
@@ -501,16 +501,3 @@ In this article, we have described and investigated the rebalancing and evacuati
 We described the rebalancing algorithm and the cooperation of EMQX and the load balancer (HAProxy).
 
 We also hope that this article will help you to understand the rebalancing and evacuation processes in EMQX and to use them in your setups.
-
-
-
-
-
-
-
-
-
-
-
-
-
