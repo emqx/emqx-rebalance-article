@@ -89,6 +89,18 @@ services:
         aliases:
         - lb.emqx.io
 
+  mqttx:
+    image: emqx/mqttx:latest
+    container_name: mqttx
+    build: ./mqttx
+    depends_on:
+      - haproxy
+    networks:
+      emqx-bridge:
+        aliases:
+        - client.emqx.io
+    command:
+      - sleep 5 && mqttx bench sub --count 90 --qos 1 --topic 'test/#' --hostname lb.emqx.io --port 1883 --no-clean
 networks:
   emqx-bridge:
     driver: bridge
