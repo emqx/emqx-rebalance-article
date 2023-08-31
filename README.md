@@ -294,7 +294,7 @@ Note, that the **cooperation of EMQX and the load balancer (HAProxy) is crucial*
 * If, additionally, we do not set up any health checks, then the clients may experience several unsuccessful connection attempts before they connect to the healthy nodes.
 * Finally, if we set up the `leastconn` strategy, but do not set up health checks, then the clients will get into a dead loop: HAProxy will send them to the unhealthy node (which dropped all the connections), and the node will reject them.
 
-## Stop Evaluation
+## Stop Evacuation
 
 Now imagine that we finished our "maintenance" on `emqx1` and returned it to the cluster.
 
